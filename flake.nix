@@ -13,8 +13,8 @@
     # ignite-site.url = "github:NixOS/nixpkgs/nixos-21.11";
     # ignite-editor.url = "github:CarolinaIgnites/editFrame";
 
-    ignite-api.url = "./igniteapi?cache-bust=1";
-    ignite-editor.url = "./editFrame?cache-bust=1";
+    ignite-api.url = "path:./igniteApi";
+    ignite-editor.url = "path:./editFrame";
   };
 
   outputs = { self, nixpkgs, home-manager, ignite-editor, ignite-api, deploy-rs, ... }:
