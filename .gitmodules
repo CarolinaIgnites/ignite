@@ -1,0 +1,6 @@
+[submodule "editFrame"]
+	path = editFrame
+	url = https://github.com/CarolinaIgnites/editFrame
+[submodule "igniteApi"]
+	path = igniteApi
+	url = https://github.com/CarolinaIgnites/igniteApi
