@@ -2,7 +2,7 @@
   description = "ignite all nix'd up";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
 
     home-manager.url = github:nix-community/home-manager;
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
@@ -40,6 +40,11 @@
           system = "x86_64-linux";
           modules =
             [
+              ({
+                systemd.tmpfiles.rules = [
+                  "d /nix/var/nix/{profiles,gcroots}/per-user/api - api - - -"
+                ];
+              })
               # home-manager.nixosModules.home-manager
               ({ pkgs, ... }: {
                 boot.isContainer = true;
@@ -116,28 +121,29 @@
                     # forceSSL = true;
                   };
                 };
+
+                services.redis = {
+                  enable = true;
+                };
+
+                systemd.services.igniteapi = {
+                  description = "Run the ignite api";
+                  wantedBy = [ "default.target" ];
+                  serviceConfig = {
+                    ExecStart =
+                      "${ignite-api.defaultPackage.x86_64-linux}/bin/igniteapi";
+                  };
+                };
               })
+
               # home-manager configuration
               home-manager.nixosModules.home-manager
               {
                 home-manager.useUserPackages = true;
                 home-manager.users.api = {
-                  home.stateVersion = "21.11";
-                  systemd.user.services.igniteapi = {
-                    Unit = {
-                      Description = "Runs the Ignite API";
-                    };
-                    Install = {
-                      WantedBy = [ "default.target" ];
-                    };
-                    Service = {
-                      ExecStart = "${ignite-api.defaultPackage.x86_64-linux}";
-                    };
-                  };
-
+                  home.stateVersion = "22.05";
                   programs.home-manager.enable = true;
                   home.file.".home-manager-installed".text = "yes\n";
-                  home.file."README.md".text = "it's alive?";
                 };
                 # systemd.user.services = [
                 #   # redis
@@ -154,22 +160,19 @@
         } // {
         privateNetwork = true;
         # Hmm. This needs to be local container specific.
-        # systemd.tmpfiles.rules = [
-        #   "d /nix/var/nix/{profiles,gcroots} - api - - -"
-        # ];
-        # bindMounts = {
-        #   per-user-profile = {
-        #     hostPath = "/var/lib/ignite/per-user-profile";
-        #     mountPoint = "/nix/var/nix/profiles/per-user";
-        #     isReadOnly = false;
-        #   };
-        #   per-user-gcroots = {
-        #     hostPath = "/var/lib/ignite/per-user-gcroots";
-        #     mountPoint = "/nix/var/nix/gcroots/per-user/api";
-        #     isReadOnly = false;
-        #   };
-        #   "/nix/var/nix/profiles/per-user/root".isReadOnly = true;
-        # };
+        bindMounts = {
+          per-user-profile = {
+            hostPath = "/var/lib/ignite/per-user-profile";
+            mountPoint = "/nix/var/nix/profiles/per-user";
+            isReadOnly = false;
+          };
+          per-user-gcroots = {
+            hostPath = "/var/lib/ignite/per-user-gcroots";
+            mountPoint = "/nix/var/nix/gcroots/per-user/api";
+            isReadOnly = false;
+          };
+          "/nix/var/nix/profiles/per-user/root".isReadOnly = true;
+        };
         # Fix permissions on profile/gcroots directories before
         # home-manager activation.
       };
